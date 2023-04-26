@@ -7,7 +7,5 @@ services:
       - '8080:8080'
     volumes:
       - ./app/:/go/src/app
-    env_file:
-      - .env
 volumes:
   dbdata: null
