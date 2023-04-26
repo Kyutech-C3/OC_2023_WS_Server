@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile.dev
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./app/:/go/src/app
+    env_file:
+      - .env
+volumes:
+  dbdata: null
