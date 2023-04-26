@@ -13,5 +13,7 @@ func main() {
 	}
 
 	e := handler.NewHandler()
+
+	go handler.BroadCastHandler()
 	e.Logger.Fatal(e.Start(":8080"))
 }
