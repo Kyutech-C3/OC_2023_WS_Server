@@ -1,18 +1,16 @@
-import { useState, useRef, useEffect, ChangeEvent } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
-// import * as WebSocket from 'websocket'
 
 function App() {
   const [websocket, setWebsocket] = useState<WebSocket>()
   const [socketStatus, setSocketStatus] = useState<string>('')
   const [message, setMessage] = useState<string[]>([])
-  const socketRef = useRef<WebSocket>()
   const [count, setCount] = useState(0)
   const [second, setSecond] = useState(0)
   const [selectFPS, setSelectFPS] = useState(1)
   const [uid, setUid] = useState('')
 
-  const socketServerUrl = 'ws://localhost:8080/ws'
+  const socketServerUrl = import.meta.env.VITE_WS_SERVER_URL
 
   const onMessage = (event: MessageEvent<string>) => {
     const broadcastData = JSON.parse(event.data)
@@ -52,7 +50,7 @@ function App() {
       setWebsocket(socket)
     })
 
-    // #3.useEffectのクリーンアップの中で、WebSocketのクローズ処理を実行
+    // useEffectのクリーンアップの中で、WebSocketのクローズ処理を実行
     return () => {
       if (websocket != null) {
         websocket.close()
