@@ -21,6 +21,7 @@ var broadcast = make(chan string, 100)
 func recvHandler() {
 	for {
 		if len(broadcast) >= 70 {
+			fmt.Println("New goroutine")
 			go BroadCastHandler()
 		}
 
