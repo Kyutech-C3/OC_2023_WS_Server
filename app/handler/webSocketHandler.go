@@ -4,7 +4,6 @@ import (
 	"c3-oc2023/models"
 	"c3-oc2023/utils"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/google/uuid"
@@ -72,7 +71,7 @@ func BroadCastHandler() {
 		case "pos":
 			var pos models.PositionBody
 			utils.MapToStruct(res.Body.(map[string]interface{}), &pos)
-			fmt.Println(pos)
+			// fmt.Println(pos)
 			for ws, uid := range clients {
 				if uid == pos.UID {
 					continue
