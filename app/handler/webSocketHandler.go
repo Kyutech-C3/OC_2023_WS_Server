@@ -4,9 +4,12 @@ import (
 	"c3-oc2023/models"
 	"c3-oc2023/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -44,27 +47,27 @@ func WebSocketHandler(c echo.Context) error {
 				UID: uuid.String(),
 			},
 		}
-		bytes, err := json.Marshal(res)
-		if err != nil {
-			c.Logger().Error(err)
-			return
-		}
-		if err := websocket.Message.Send(ws, string(bytes)); err != nil {
+		if err := websocket.JSON.Send(ws, res); err != nil {
 			c.Logger().Error(err)
 			return
 		}
 		clients.Store(ws, uuid.String())
-
 		count++
-		fmt.Println(count)
-
-		go BroadCastHandler()
 
 		// Read Message
 		for {
 			msg := ""
-			err = websocket.Message.Receive(ws, &msg)
+			err := websocket.Message.Receive(ws, &msg)
 			if err != nil {
+				if errors.Is(err, syscall.EPIPE) {
+					clients.Delete(ws)
+					count--
+					continue
+				} else if errors.Is(err, io.EOF) {
+					clients.Delete(ws)
+					count--
+					continue
+				}
 				c.Logger().Error(err)
 				clients.Delete(ws)
 				count--
