@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -15,7 +16,17 @@ import (
 
 var count int
 var clients sync.Map
-var broadcast = make(chan string)
+var broadcast = make(chan string, 100)
+
+func recvHandler() {
+	for {
+		if len(broadcast) >= 70 {
+			go BroadCastHandler()
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+}
 
 func WebSocketHandler(c echo.Context) error {
 	websocket.Handler(func(ws *websocket.Conn) {
