@@ -11,6 +11,7 @@ func NewHandler() *echo.Echo {
 	e.Use(middleware.Recover())
 
 	e.GET("/ws", WebSocketHandler)
+	go recvHandler()
 
 	return e
 }
