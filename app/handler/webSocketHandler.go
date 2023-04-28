@@ -4,6 +4,7 @@ import (
 	"c3-oc2023/models"
 	"c3-oc2023/utils"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/google/uuid"
@@ -39,6 +40,8 @@ func WebSocketHandler(c echo.Context) error {
 			return
 		}
 		clients[ws] = uuid.String()
+
+		fmt.Println(len(clients))
 
 		go BroadCastHandler()
 
