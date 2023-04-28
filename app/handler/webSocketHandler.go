@@ -54,30 +54,61 @@ func WebSocketHandler(c echo.Context) error {
 		clients.Store(ws, uuid.String())
 		count++
 
+		var wg sync.WaitGroup
+		ch := make(chan models.Response, 5)
+		cancel := make(chan struct{})
+		wg.Add(1)
+		go send(ch, cancel)
+
 		// Read Message
 		for {
-			msg := ""
-			err := websocket.Message.Receive(ws, &msg)
+			var msg models.Response
+			err := websocket.JSON.Receive(ws, &msg)
 			if err != nil {
-				if errors.Is(err, syscall.EPIPE) {
-					clients.Delete(ws)
+				if errors.Is(err, io.EOF) {
 					count--
-					continue
-				} else if errors.Is(err, io.EOF) {
-					clients.Delete(ws)
-					count--
-					continue
+					break
 				}
 				c.Logger().Error(err)
 				clients.Delete(ws)
 				count--
 				break
 			}
-			broadcast <- msg
+			ch <- msg
 		}
+
+		clients.Delete(ws)
+		close(cancel)
+		close(ch)
+		wg.Wait()
 	}).ServeHTTP(c.Response(), c.Request())
 
 	return nil
+}
+
+func send(ch <-chan models.Response, cancel chan struct{}) {
+	for {
+		select {
+		case <-cancel:
+			return
+		default:
+			msg := <-ch
+			clients.Range(func(ws, uid interface{}) bool {
+				if uid.(string) == msg.Body.(models.PositionBody).UID {
+					return true
+				}
+				if err := websocket.JSON.Send(ws.(*websocket.Conn), msg); err != nil {
+					if errors.Is(err, syscall.EPIPE) {
+						clients.Delete(ws.(*websocket.Conn))
+						return true
+					} else {
+						return false
+					}
+				}
+				return true
+			})
+		}
+	}
 }
 
 func BroadCastHandler() {
