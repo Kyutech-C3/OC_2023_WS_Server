@@ -85,6 +85,7 @@ func BroadCastHandler() {
 				}
 				if err := websocket.Message.Send(ws.(*websocket.Conn), msg); err != nil {
 					log.Fatal(err)
+					ws.(*websocket.Conn).Close()
 					clients.Delete(ws)
 					count--
 				}
