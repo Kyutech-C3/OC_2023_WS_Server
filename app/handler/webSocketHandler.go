@@ -66,12 +66,13 @@ func BroadCastHandler() {
 		res := &models.Response{}
 		bytes := []byte(msg)
 		json.Unmarshal(bytes, &res)
-		fmt.Println(res)
+		// fmt.Println(res)
 
 		switch res.Type {
 		case "pos":
 			var pos models.PositionBody
 			utils.MapToStruct(res.Body.(map[string]interface{}), &pos)
+			fmt.Println(pos)
 			for ws, uid := range clients {
 				if uid == pos.UID {
 					continue
