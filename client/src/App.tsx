@@ -4,23 +4,28 @@ import './App.css'
 function App() {
   const [websocket, setWebsocket] = useState<WebSocket>()
   const [socketStatus, setSocketStatus] = useState<string>('')
-  const [message, setMessage] = useState<string[]>([])
+  const [message, setMessage] = useState<string>('')
   const [count, setCount] = useState(0)
   const [second, setSecond] = useState(0)
   const [selectFPS, setSelectFPS] = useState(1)
+  const [receive, setReceive] = useState(0)
+  const [fps, setFps] = useState(0)
+  const [rfps, setRFps] = useState(0)
+
   const [uid, setUid] = useState('')
 
   const socketServerUrl = import.meta.env.VITE_WS_SERVER_URL
 
   const onMessage = (event: MessageEvent<string>) => {
+    setReceive((prev) => prev + 1)
     const broadcastData = JSON.parse(event.data)
     if (broadcastData.type === 'init') {
       setUid(broadcastData.body.uid)
       console.log(uid)
       console.log(broadcastData)
     }
-    console.log(event.data)
-    setMessage((prev) => [...prev, event.data])
+    // console.log(event.data)
+    setMessage(event.data)
   }
 
   const connect = (): Promise<WebSocket> => {
@@ -30,6 +35,7 @@ function App() {
         console.log('connected')
         setSocketStatus('connected')
         setWebsocket(socket)
+        setSecond(0)
         resolve(socket)
       }
       socket.onmessage = onMessage
@@ -48,6 +54,7 @@ function App() {
   useEffect(() => {
     connect().then((socket) => {
       setWebsocket(socket)
+      setSecond(0)
     })
 
     // useEffectのクリーンアップの中で、WebSocketのクローズ処理を実行
@@ -61,7 +68,7 @@ function App() {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      if (uid && websocket && websocket?.readyState === websocket?.OPEN) {
+      if (uid && websocket) {
         websocket.send(
           JSON.stringify({
             type: 'pos',
@@ -73,23 +80,34 @@ function App() {
             },
           })
         )
+        setCount((prev) => prev + 1)
       }
-      setCount((prev) => prev + 1)
     }, Math.floor((1 / selectFPS) * 1000))
     return () => clearInterval(intervalId)
-  }, [count])
+  }, [websocket, selectFPS])
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setSecond((prev) => prev + 1)
+      if (uid && websocket) {
+        setSecond((prev) => prev + 1)
+        // console.log(count)
+      }
     }, 1000)
     return () => clearInterval(intervalId)
+  }, [websocket])
+
+  useEffect(() => {
+    setFps(count)
+    setCount(0)
+    setRFps(receive)
+    setReceive(0)
   }, [second])
 
   const handleChangeFPS = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCount(0)
     setSecond(0)
-    setMessage([])
+    setMessage('')
+    setReceive(0)
     setSelectFPS(Number(e.target.value))
   }
 
@@ -100,8 +118,8 @@ function App() {
         {message}
       </div>
       <div className="bg-gray-100 px-5 py-2 rounded-xl my-5">
-        <div>{count} 回</div>
-        <div>{Math.floor(count / second)} fps</div>
+        {/* <div>{count} 回</div> */}
+        <div>{fps} fps</div>
       </div>
       <div className="bg-gray-100 px-5 py-2 rounded-xl my-5">
         <div className="my-3 flex w-fit mx-auto">
@@ -123,7 +141,7 @@ function App() {
             onClick={() => {
               setCount(0)
               setSecond(0)
-              setMessage([])
+              setMessage('')
             }}
           >
             リセット
@@ -140,6 +158,10 @@ function App() {
             再接続
           </button>
         </div>
+      </div>
+      <div className="bg-gray-100 px-5 py-2 rounded-xl my-5">
+        {/* <div>{count} 回</div> */}
+        <div>{rfps} 回</div>
       </div>
     </>
   )
