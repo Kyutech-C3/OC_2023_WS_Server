@@ -6,13 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/net/websocket"
 )
 
-var clients = make(map[*websocket.Conn]string)
+var count int
+var clients sync.Map
 var broadcast = make(chan string)
 
 func WebSocketHandler(c echo.Context) error {
@@ -39,9 +41,10 @@ func WebSocketHandler(c echo.Context) error {
 			c.Logger().Error(err)
 			return
 		}
-		clients[ws] = uuid.String()
+		clients.Store(ws, uuid.String())
 
-		fmt.Println(len(clients))
+		count++
+		fmt.Println(count)
 
 		go BroadCastHandler()
 
@@ -51,7 +54,8 @@ func WebSocketHandler(c echo.Context) error {
 			err = websocket.Message.Receive(ws, &msg)
 			if err != nil {
 				c.Logger().Error(err)
-				delete(clients, ws)
+				clients.Delete(ws)
+				count--
 				break
 			}
 			broadcast <- msg
@@ -75,28 +79,30 @@ func BroadCastHandler() {
 			var pos models.PositionBody
 			utils.MapToStruct(res.Body.(map[string]interface{}), &pos)
 			// fmt.Println(pos)
-			for ws, uid := range clients {
+			clients.Range(func(ws, uid any) bool {
 				if uid == pos.UID {
-					continue
+					return true
 				}
-				if err := websocket.Message.Send(ws, msg); err != nil {
+				if err := websocket.Message.Send(ws.(*websocket.Conn), msg); err != nil {
 					log.Fatal(err)
-					delete(clients, ws)
+					clients.Delete(ws)
+					count--
 				}
-			}
+				return true
+			})
 
-		case "mes":
-			var mes models.MessageBody
-			utils.MapToStruct(res.Body.(map[string]interface{}), &mes)
-			for ws, uid := range clients {
-				if uid == mes.UID {
-					continue
-				}
-				if err := websocket.Message.Send(ws, msg); err != nil {
-					log.Fatal(err)
-					delete(clients, ws)
-				}
-			}
+			// case "mes":
+			// 	var mes models.MessageBody
+			// 	utils.MapToStruct(res.Body.(map[string]interface{}), &mes)
+			// 	for ws, uid := range clients {
+			// 		if uid == mes.UID {
+			// 			continue
+			// 		}
+			// 		if err := websocket.Message.Send(ws, msg); err != nil {
+			// 			log.Fatal(err)
+			// 			delete(clients, ws)
+			// 		}
+			// 	}
 		}
 
 	}
