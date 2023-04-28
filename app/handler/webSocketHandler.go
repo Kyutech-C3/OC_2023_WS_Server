@@ -93,8 +93,11 @@ func send(ch <-chan models.Response, cancel chan struct{}) {
 			return
 		default:
 			msg := <-ch
+			var pos models.PositionBody
+			utils.MapToStruct(msg.Body.(map[string]interface{}), &pos)
+			msg.Body = pos
 			clients.Range(func(ws, uid interface{}) bool {
-				if uid.(string) == msg.Body.(models.PositionBody).UID {
+				if uid.(string) == pos.UID {
 					return true
 				}
 				if err := websocket.JSON.Send(ws.(*websocket.Conn), msg); err != nil {
