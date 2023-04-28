@@ -40,6 +40,8 @@ func WebSocketHandler(c echo.Context) error {
 		}
 		clients[ws] = uuid.String()
 
+		go BroadCastHandler()
+
 		// Read Message
 		for {
 			msg := ""
