@@ -3,11 +3,9 @@ package handler
 import (
 	"c3-oc2023/models"
 	"c3-oc2023/utils"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"sync"
 	"syscall"
 	"time"
@@ -23,10 +21,7 @@ var broadcast = make(chan string, 100)
 
 func recvHandler() {
 	for {
-		if len(broadcast) >= 70 {
-			fmt.Println("New goroutine")
-			go BroadCastHandler()
-		}
+		fmt.Println(count)
 
 		time.Sleep(1 * time.Second)
 	}
@@ -66,12 +61,10 @@ func WebSocketHandler(c echo.Context) error {
 			err := websocket.JSON.Receive(ws, &msg)
 			if err != nil {
 				if errors.Is(err, io.EOF) {
-					count--
 					break
 				}
 				c.Logger().Error(err)
 				clients.Delete(ws)
-				count--
 				break
 			}
 			ch <- msg
@@ -80,6 +73,7 @@ func WebSocketHandler(c echo.Context) error {
 		clients.Delete(ws)
 		close(cancel)
 		close(ch)
+		count--
 		wg.Wait()
 	}).ServeHTTP(c.Response(), c.Request())
 
@@ -114,49 +108,5 @@ func send(ch <-chan models.Response, cancel chan struct{}) {
 				})
 			}
 		}
-	}
-}
-
-func BroadCastHandler() {
-	for {
-		msg := <-broadcast
-
-		res := &models.Response{}
-		bytes := []byte(msg)
-		json.Unmarshal(bytes, &res)
-		// fmt.Println(res)
-
-		switch res.Type {
-		case "pos":
-			var pos models.PositionBody
-			utils.MapToStruct(res.Body.(map[string]interface{}), &pos)
-			// fmt.Println(pos)
-			clients.Range(func(ws, uid any) bool {
-				if uid == pos.UID {
-					return true
-				}
-				if err := websocket.Message.Send(ws.(*websocket.Conn), msg); err != nil {
-					log.Fatal(err)
-					ws.(*websocket.Conn).Close()
-					clients.Delete(ws)
-					count--
-				}
-				return true
-			})
-
-			// case "mes":
-			// 	var mes models.MessageBody
-			// 	utils.MapToStruct(res.Body.(map[string]interface{}), &mes)
-			// 	for ws, uid := range clients {
-			// 		if uid == mes.UID {
-			// 			continue
-			// 		}
-			// 		if err := websocket.Message.Send(ws, msg); err != nil {
-			// 			log.Fatal(err)
-			// 			delete(clients, ws)
-			// 		}
-			// 	}
-		}
-
 	}
 }
