@@ -4,6 +4,7 @@ import (
 	"c3-oc2023/models"
 	"c3-oc2023/utils"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/google/uuid"
@@ -40,6 +41,8 @@ func WebSocketHandler(c echo.Context) error {
 		}
 		clients[ws] = uuid.String()
 
+		go BroadCastHandler()
+
 		// Read Message
 		for {
 			msg := ""
@@ -63,6 +66,7 @@ func BroadCastHandler() {
 		res := &models.Response{}
 		bytes := []byte(msg)
 		json.Unmarshal(bytes, &res)
+		fmt.Println(res)
 
 		switch res.Type {
 		case "pos":
