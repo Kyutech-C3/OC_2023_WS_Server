@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile.dev
     expose:
       - '8080'
+    ports:
+      - '8080:8080'
     volumes:
       - ./app/:/go/src/app
 
