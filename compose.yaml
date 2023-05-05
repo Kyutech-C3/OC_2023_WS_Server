@@ -10,23 +10,5 @@ services:
     volumes:
       - ./app/:/go/src/app
 
-  nginx:
-    image: nginx:stable
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ./letsencrypt:/etc/letsencrypt # 追記
-      - ./var/www/html:/var/www/html # 追記
-    restart: always
-
-  certbot:
-    image: certbot/certbot:v1.7.0
-    volumes:
-      - ./letsencrypt:/etc/letsencrypt # 追記
-      - ./var/www/html:/var/www/html # 追記
-    command: [ "--version" ]
-
 volumes:
   dbdata: null
