@@ -14,8 +14,8 @@ type Body struct {
 type PositionBody struct {
 	Body
 	Name string `json:"name"`
-	X    int    `json:"x"`
-	Y    int    `json:"y"`
+	X    string `json:"x"`
+	Y    string `json:"y"`
 }
 
 type MessageBody struct {
