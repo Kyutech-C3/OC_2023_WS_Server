@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 function App() {
   const [websocket, setWebsocket] = useState<WebSocket>()
   const [socketStatus, setSocketStatus] = useState<string>('')
   const [message, setMessage] = useState<string>('')
-  const [count, setCount] = useState(0)
+  const [messages, setMessages] = useState<string[]>([])
+  const countRef = useRef(0)
   const [second, setSecond] = useState(0)
   const [selectFPS, setSelectFPS] = useState(1)
   const [receive, setReceive] = useState(0)
@@ -26,6 +27,7 @@ function App() {
     }
     // console.log(event.data)
     setMessage(event.data)
+    setMessages((prev) => [...prev, event.data])
   }
 
   const connect = (): Promise<WebSocket> => {
@@ -75,12 +77,13 @@ function App() {
             body: {
               uid: uid.toString(),
               name: uid.toString(),
-              x: count.toString(),
-              y: count.toString(),
+              x: countRef.current.toString(),
+              y: countRef.current.toString(),
             },
           })
         )
-        setCount((prev) => prev + 1)
+
+        countRef.current = countRef.current + 1
       }
     }, Math.floor((1 / selectFPS) * 1000))
     return () => clearInterval(intervalId)
@@ -97,14 +100,13 @@ function App() {
   }, [websocket])
 
   useEffect(() => {
-    setFps(count)
-    setCount(0)
+    setFps(countRef.current / second)
     setRFps(receive)
     setReceive(0)
   }, [second])
 
   const handleChangeFPS = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCount(0)
+    countRef.current = 0
     setSecond(0)
     setMessage('')
     setReceive(0)
@@ -113,12 +115,16 @@ function App() {
 
   return (
     <>
-      <div className="text-xl">{socketStatus}</div>
+      <h2 className="mb-10">接続状況：{socketStatus}</h2>
+      <h2>最新メッセージ</h2>
       <div className="h-40 overflow-y-scroll bg-gray-100 px-5 py-2 rounded-xl my-5">
         {message}
       </div>
+      <h2>メッセージ履歴</h2>
+      <div className="h-40 overflow-y-scroll bg-gray-100 px-5 py-2 rounded-xl my-5">
+        {messages}
+      </div>
       <div className="bg-gray-100 px-5 py-2 rounded-xl my-5">
-        {/* <div>{count} 回</div> */}
         <div>{fps} fps</div>
       </div>
       <div className="bg-gray-100 px-5 py-2 rounded-xl my-5">
@@ -139,7 +145,7 @@ function App() {
             className="rounded-md bg-sky-500 text-white px-5 py-1"
             type="button"
             onClick={() => {
-              setCount(0)
+              countRef.current = 0
               setSecond(0)
               setMessage('')
             }}
@@ -153,6 +159,11 @@ function App() {
             type="button"
             onClick={() => {
               websocket?.close()
+              connect().then((socket) => {
+                setWebsocket(socket)
+                setSecond(0)
+                countRef.current = 0
+              })
             }}
           >
             再接続
