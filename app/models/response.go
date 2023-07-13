@@ -13,9 +13,13 @@ type Body struct {
 
 type PositionBody struct {
 	Body
-	Name string `json:"name"`
-	X    string `json:"x"`
-	Y    string `json:"y"`
+	Name      string  `json:"name"`
+	X         float32 `json:"x"`
+	Y         float32 `json:"y"`
+	Z         float32 `json:"z"`
+	R         float32 `json:"r"`
+	Anime     string  `json:"anime"`
+	AnimeTime float32 `json:"time"`
 }
 
 type MessageBody struct {
