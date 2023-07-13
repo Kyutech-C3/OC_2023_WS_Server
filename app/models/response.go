@@ -17,7 +17,9 @@ type PositionBody struct {
 	X         float32 `json:"x"`
 	Y         float32 `json:"y"`
 	Z         float32 `json:"z"`
-	R         float32 `json:"r"`
+	RotX      float32 `json:"rot_x"`
+	RotY      float32 `json:"rot_y"`
+	RotZ      float32 `json:"rot_z"`
 	Anime     string  `json:"anime"`
 	AnimeTime float32 `json:"time"`
 }
